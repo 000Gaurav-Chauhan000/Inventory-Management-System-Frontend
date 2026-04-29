@@ -1,0 +1,209 @@
+<div class="space-y-8">
+  <app-page-header
+    eyebrow="Alerts"
+    title="Alert centre"
+    description="Create, send, and manage alerts through the alert microservice."
+  ></app-page-header>
+
+  <app-floating-notice></app-floating-notice>
+
+  <div class="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+    <section class="panel-soft p-6">
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Load Recipient Alerts</p>
+      <div class="mt-5 grid gap-4 md:grid-cols-2">
+        <div>
+          <label class="mb-2 block text-sm font-medium text-ink-700">Load mode</label>
+          <select [ngModel]="loadMode()" (ngModelChange)="loadMode.set($event)">
+            @for (option of ALERT_LOAD_OPTIONS; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label class="mb-2 block text-sm font-medium text-ink-700">Recipient ID</label>
+          <input
+            placeholder="Numeric recipient ID"
+            [ngModel]="recipientId()"
+            (ngModelChange)="recipientId.set($event)"
+          />
+        </div>
+      </div>
+      <div class="mt-5 flex flex-wrap gap-3">
+        <button class="primary-btn" (click)="handleLoadAlerts()" type="button">
+          {{ selectedLoadOption.actionLabel }}
+        </button>
+      </div>
+
+      @if (unreadCount()) {
+        <div class="mt-5 rounded-3xl bg-white p-5">
+          <p class="text-xs uppercase tracking-[0.2em] text-ink-500">Unread count</p>
+          <p class="mt-2 text-4xl font-semibold">{{ unreadCount() }}</p>
+        </div>
+      }
+    </section>
+
+    <form class="panel-soft p-6" (ngSubmit)="handleCreate()">
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Create Alert</p>
+      <div class="mt-5 grid gap-4 md:grid-cols-2">
+        <div>
+          <label class="mb-2 block text-sm font-medium text-ink-700">Recipient ID</label>
+          <input
+            required
+            type="number"
+            [ngModel]="form().recipientId"
+            (ngModelChange)="form.set(Object.assign({}, form(), {recipientId: $event}))"
+            name="recipientId"
+          />
+        </div>
+        <div>
+          <label class="mb-2 block text-sm font-medium text-ink-700">Type</label>
+          <select
+            [ngModel]="form().type"
+            (ngModelChange)="form.set(Object.assign({}, form(), {type: $event}))"
+            name="type"
+          >
+            <option value="LOW_STOCK">LOW_STOCK</option>
+            <option value="OVERSTOCK">OVERSTOCK</option>
+            <option value="PO_PENDING">PO_PENDING</option>
+            <option value="INFO">INFO</option>
+          </select>
+        </div>
+        <div>
+          <label class="mb-2 block text-sm font-medium text-ink-700">Severity</label>
+          <select
+            [ngModel]="form().severity"
+            (ngModelChange)="form.set(Object.assign({}, form(), {severity: $event}))"
+            name="severity"
+          >
+            <option value="INFO">INFO</option>
+            <option value="WARNING">WARNING</option>
+            <option value="CRITICAL">CRITICAL</option>
+          </select>
+        </div>
+        <div>
+          <label class="mb-2 block text-sm font-medium text-ink-700">Channel</label>
+          <select
+            [ngModel]="form().channel"
+            (ngModelChange)="form.set(Object.assign({}, form(), {channel: $event}))"
+            name="channel"
+          >
+            <option value="IN_APP">IN_APP</option>
+            <option value="EMAIL">EMAIL</option>
+          </select>
+        </div>
+        <div class="md:col-span-2">
+          <label class="mb-2 block text-sm font-medium text-ink-700">Title</label>
+          <input
+            required
+            [ngModel]="form().title"
+            (ngModelChange)="form.set(Object.assign({}, form(), {title: $event}))"
+            name="title"
+          />
+        </div>
+        <div class="md:col-span-2">
+          <label class="mb-2 block text-sm font-medium text-ink-700">Message</label>
+          <textarea
+            rows="3"
+            required
+            [ngModel]="form().message"
+            (ngModelChange)="form.set(Object.assign({}, form(), {message: $event}))"
+            name="message"
+          ></textarea>
+        </div>
+        <div>
+          <label class="mb-2 block text-sm font-medium text-ink-700">Related product ID</label>
+          <input
+            placeholder="Optional GUID"
+            [ngModel]="form().relatedProductId"
+            (ngModelChange)="form.set(Object.assign({}, form(), {relatedProductId: $event}))"
+            name="relatedProductId"
+          />
+        </div>
+        <div>
+          <label class="mb-2 block text-sm font-medium text-ink-700">Related warehouse ID</label>
+          <input
+            placeholder="Optional numeric ID"
+            type="number"
+            [ngModel]="form().relatedWarehouseId"
+            (ngModelChange)="form.set(Object.assign({}, form(), {relatedWarehouseId: $event}))"
+            name="relatedWarehouseId"
+          />
+        </div>
+        <div class="md:col-span-2">
+          <label class="mb-2 block text-sm font-medium text-ink-700">Bulk recipient IDs</label>
+          <textarea
+            placeholder="Separate recipient IDs with commas or spaces"
+            rows="2"
+            [ngModel]="bulkRecipients()"
+            (ngModelChange)="bulkRecipients.set($event)"
+            name="bulkRecipients"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="mt-5 flex flex-wrap gap-3">
+        <button class="primary-btn" type="submit">
+          Send alert
+        </button>
+        <button class="secondary-btn" (click)="handleBulkCreate()" type="button">
+          Send bulk alerts
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <section class="panel-soft p-6">
+    <app-data-table [columns]="columns" [rows]="alerts()"></app-data-table>
+  </section>
+</div>
+
+<ng-template #alertCell let-row>
+  <div>
+    <p class="font-semibold text-ink-900">{{ getValue(row, "title", "Title") }}</p>
+    <p class="text-xs text-ink-500">{{ getValue(row, "message", "Message") }}</p>
+  </div>
+</ng-template>
+
+<ng-template #recipientCell let-row>
+  <span class="font-mono text-sm text-ink-800">
+    #{{ getValue(row, "recipientId", "RecipientId") || "-" }}
+  </span>
+</ng-template>
+
+<ng-template #typeCell let-row>
+  {{ getValue(row, "type", "Type") }}
+</ng-template>
+
+<ng-template #severityCell let-row>
+  {{ getValue(row, "severity", "Severity") }}
+</ng-template>
+
+<ng-template #createdCell let-row>
+  {{ formatDate(getValue(row, "createdAt", "CreatedAt")) }}
+</ng-template>
+
+<ng-template #actionsCell let-row>
+  <div class="flex flex-wrap gap-2">
+    <button
+      class="secondary-btn px-4 py-2"
+      (click)="handleMarkRead(row)"
+      type="button"
+    >
+      Read
+    </button>
+    <button
+      class="secondary-btn px-4 py-2"
+      (click)="handleAcknowledge(row)"
+      type="button"
+    >
+      Acknowledge
+    </button>
+    <button
+      class="danger-btn px-4 py-2"
+      (click)="handleDelete(row)"
+      type="button"
+    >
+      Delete
+    </button>
+  </div>
+</ng-template>

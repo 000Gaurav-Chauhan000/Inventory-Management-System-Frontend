@@ -1,0 +1,154 @@
+<div class="space-y-8">
+  <app-page-header
+    eyebrow="Admin"
+    title="Manage users and create internal admins"
+    description="This page uses the auth microservice and keeps admin creation inside the admin-only area."
+  ></app-page-header>
+
+  <app-floating-notice></app-floating-notice>
+
+  <div class="grid gap-4 2xl:grid-cols-[minmax(340px,0.92fr)_minmax(0,1.08fr)]">
+    <form class="panel-soft min-w-0 self-start p-6" (ngSubmit)="handleCreate()">
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Create User</p>
+      <div class="mt-5 grid gap-4">
+        <div class="rounded-3xl border border-ink-100 bg-white p-5">
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Identity</p>
+          <div class="mt-4 grid gap-4 md:grid-cols-2">
+            <div class="md:col-span-2">
+              <label class="mb-2 block text-sm font-medium text-ink-700">Full name</label>
+              <input
+                required
+                [ngModel]="draftForm().fullName"
+                (ngModelChange)="draftForm.set(Object.assign({}, draftForm(), {fullName: $event}))"
+                name="fullName"
+              />
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-medium text-ink-700">Email</label>
+              <input
+                required
+                type="email"
+                [ngModel]="draftForm().email"
+                (ngModelChange)="draftForm.set(Object.assign({}, draftForm(), {email: $event}))"
+                name="email"
+              />
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-medium text-ink-700">Password</label>
+              <input
+                required
+                type="password"
+                [ngModel]="password()"
+                (ngModelChange)="password.set($event)"
+                name="password"
+              />
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-medium text-ink-700">Phone</label>
+              <input
+                [ngModel]="draftForm().phone"
+                (ngModelChange)="draftForm.set(Object.assign({}, draftForm(), {phone: $event}))"
+                name="phone"
+              />
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-medium text-ink-700">Department</label>
+              <input
+                [ngModel]="draftForm().department"
+                (ngModelChange)="draftForm.set(Object.assign({}, draftForm(), {department: $event}))"
+                name="department"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-3xl border border-ink-100 bg-white p-5">
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Access</p>
+          <div class="mt-4 grid gap-4">
+            <div>
+              <label class="mb-2 block text-sm font-medium text-ink-700">Role</label>
+              <select
+                [ngModel]="draftForm().role"
+                (ngModelChange)="draftForm.set(Object.assign({}, draftForm(), {role: $event}))"
+                name="role"
+              >
+                @for (role of ROLES; track role) {
+                  <option [value]="role">{{ role }}</option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+          <button class="primary-btn" type="submit">
+            Create account
+          </button>
+          <button
+            class="secondary-btn"
+            (click)="draftForm.set({fullName: '', email: '', phone: '', role: 'STAFF', department: ''}); password.set('')"
+            type="button"
+          >
+            Reset form
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <section class="panel-soft min-w-0 p-6">
+      <div class="mb-5">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">User Directory</p>
+          <h3 class="mt-2 text-2xl">{{ users().length }} users</h3>
+          <p class="mt-2 text-sm text-ink-600">
+            Review internal accounts, create role-based access, and deactivate users when needed.
+          </p>
+        </div>
+      </div>
+
+      <app-data-table [columns]="columns" [rows]="users()"></app-data-table>
+    </section>
+  </div>
+</div>
+
+<ng-template #nameCell let-row>
+  <div>
+    <p class="font-semibold text-ink-900">{{ getValue(row, "fullName", "FullName") }}</p>
+    <p class="text-xs text-ink-500">{{ getValue(row, "email", "Email") }}</p>
+  </div>
+</ng-template>
+
+<ng-template #roleCell let-row>
+  {{ ROLE_LABELS[getValue(row, "role", "Role")] || getValue(row, "role", "Role") }}
+</ng-template>
+
+<ng-template #departmentCell let-row>
+  {{ getValue(row, "department", "Department") || "-" }}
+</ng-template>
+
+<ng-template #statusCell let-row>
+  <span
+    class="tag"
+    [class.bg-mint_30]="getValue(row, 'isActive', 'IsActive')"
+    [class.text-ink-950]="getValue(row, 'isActive', 'IsActive')"
+    [class.bg-coral_10]="!getValue(row, 'isActive', 'IsActive')"
+    [class.text-coral]="!getValue(row, 'isActive', 'IsActive')"
+    [ngClass]="getValue(row, 'isActive', 'IsActive') ? 'bg-mint/30 text-ink-950' : 'bg-coral/10 text-coral'"
+  >
+    {{ getValue(row, "isActive", "IsActive") ? "Active" : "Inactive" }}
+  </span>
+</ng-template>
+
+<ng-template #createdCell let-row>
+  {{ formatDate(getValue(row, "createdAt", "CreatedAt")) }}
+</ng-template>
+
+<ng-template #actionsCell let-row>
+  <button
+    class="secondary-btn px-4 py-2"
+    (click)="handleDeactivate(row)"
+    type="button"
+  >
+    Deactivate
+  </button>
+</ng-template>

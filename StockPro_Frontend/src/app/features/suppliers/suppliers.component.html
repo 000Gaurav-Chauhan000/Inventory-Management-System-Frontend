@@ -1,0 +1,188 @@
+<div class="space-y-8">
+  <app-page-header
+    eyebrow="Procurement"
+    title="Suppliers"
+  >
+    <ng-template #actions>
+      <button class="secondary-btn" (click)="handleRefresh()" type="button">
+        Refresh
+      </button>
+    </ng-template>
+  </app-page-header>
+  
+  <p class="text-ink-600 mt-[-1.5rem]">Purchase officers can create, update, search, and rate supplier records.</p>
+
+  <app-floating-notice></app-floating-notice>
+
+  <section class="panel-soft p-6">
+    <div class="grid gap-3 md:grid-cols-[220px_minmax(0,1fr)_auto_auto]">
+      <select [ngModel]="lookupMode()" (ngModelChange)="lookupMode.set($event)">
+        <option value="name">Search by name</option>
+        <option value="id">Lookup by supplier ID</option>
+        <option value="city">Filter by city</option>
+        <option value="country">Filter by country</option>
+      </select>
+      <input
+        [placeholder]="lookupMode() === 'id' ? 'Enter supplier ID' : lookupMode() === 'city' ? 'Enter city' : lookupMode() === 'country' ? 'Enter country' : 'Search suppliers by name'"
+        [ngModel]="lookupValue()"
+        (ngModelChange)="lookupValue.set($event)"
+      />
+      <button class="primary-btn md:w-40" (click)="handleLookup()" type="button">
+        Run lookup
+      </button>
+      <button class="secondary-btn md:w-36" (click)="resetLookup()" type="button">
+        Reset
+      </button>
+    </div>
+  </section>
+
+  <div class="grid gap-4 2xl:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)]">
+    <section class="panel-soft min-w-0 p-6">
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Supplier List</p>
+      <div class="mt-5">
+        <app-data-table [columns]="columns" [rows]="suppliers()"></app-data-table>
+      </div>
+    </section>
+
+    <section class="grid min-w-0 content-start gap-4">
+      <form class="panel-soft self-start p-6" (ngSubmit)="handleSubmit()">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">
+          {{ editingId() ? "Edit Supplier" : "Create Supplier" }}
+        </p>
+
+        <div class="mt-5 grid gap-4">
+          <div class="rounded-3xl border border-ink-100 bg-white p-5">
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Identity</p>
+            <div class="mt-4 grid gap-4 md:grid-cols-2">
+              <div class="md:col-span-2">
+                <label class="mb-2 block text-sm font-medium text-ink-700">Name</label>
+                <input required [ngModel]="form().name" (ngModelChange)="form.set(Object.assign({}, form(), {name: $event}))" name="name" />
+              </div>
+              <div>
+                <label class="mb-2 block text-sm font-medium text-ink-700">Contact person</label>
+                <input [ngModel]="form().contactPerson" (ngModelChange)="form.set(Object.assign({}, form(), {contactPerson: $event}))" name="contactPerson" />
+              </div>
+              <div>
+                <label class="mb-2 block text-sm font-medium text-ink-700">Email</label>
+                <input required type="email" [ngModel]="form().email" (ngModelChange)="form.set(Object.assign({}, form(), {email: $event}))" name="email" />
+              </div>
+              <div>
+                <label class="mb-2 block text-sm font-medium text-ink-700">Phone</label>
+                <input required [ngModel]="form().phone" (ngModelChange)="form.set(Object.assign({}, form(), {phone: $event}))" name="phone" />
+              </div>
+              <div>
+                <label class="mb-2 block text-sm font-medium text-ink-700">Address</label>
+                <input [ngModel]="form().address" (ngModelChange)="form.set(Object.assign({}, form(), {address: $event}))" name="address" />
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-3xl border border-ink-100 bg-white p-5">
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Location and Terms</p>
+            <div class="mt-4 grid gap-4 md:grid-cols-2">
+              <div>
+                <label class="mb-2 block text-sm font-medium text-ink-700">City</label>
+                <input [ngModel]="form().city" (ngModelChange)="form.set(Object.assign({}, form(), {city: $event}))" name="city" />
+              </div>
+              <div>
+                <label class="mb-2 block text-sm font-medium text-ink-700">Country</label>
+                <input [ngModel]="form().country" (ngModelChange)="form.set(Object.assign({}, form(), {country: $event}))" name="country" />
+              </div>
+              <div>
+                <label class="mb-2 block text-sm font-medium text-ink-700">Tax ID</label>
+                <input [ngModel]="form().taxId" (ngModelChange)="form.set(Object.assign({}, form(), {taxId: $event}))" name="taxId" />
+              </div>
+              <div>
+                <label class="mb-2 block text-sm font-medium text-ink-700">Payment terms</label>
+                <input [ngModel]="form().paymentTerms" (ngModelChange)="form.set(Object.assign({}, form(), {paymentTerms: $event}))" name="paymentTerms" />
+              </div>
+              <div class="md:col-span-2">
+                <label class="mb-2 block text-sm font-medium text-ink-700">Lead time days</label>
+                <input type="number" [ngModel]="form().leadTimeDays" (ngModelChange)="form.set(Object.assign({}, form(), {leadTimeDays: $event}))" name="leadTimeDays" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-5 flex flex-wrap gap-3">
+          <button class="primary-btn" type="submit">
+            {{ editingId() ? "Save supplier" : "Create supplier" }}
+          </button>
+          @if (editingId()) {
+            <button class="secondary-btn" (click)="cancelEdit()" type="button">Cancel edit</button>
+          } @else {
+            <button class="secondary-btn" (click)="resetForm()" type="button">Reset form</button>
+          }
+        </div>
+      </form>
+
+      <form class="panel-soft p-6" (ngSubmit)="handleRating()">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Update Rating</p>
+        <div class="mt-5 grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="mb-2 block text-sm font-medium text-ink-700">Supplier ID</label>
+            <input required type="number" [ngModel]="rating().supplierId" (ngModelChange)="rating.set(Object.assign({}, rating(), {supplierId: $event}))" name="supplierId" />
+          </div>
+          <div>
+            <label class="mb-2 block text-sm font-medium text-ink-700">Rating</label>
+            <input required max="5" min="0" step="0.5" type="number" [ngModel]="rating().value" (ngModelChange)="rating.set(Object.assign({}, rating(), {value: $event}))" name="value" />
+          </div>
+        </div>
+
+        <div class="mt-5 flex flex-wrap gap-3">
+          <button class="primary-btn" type="submit">Update rating</button>
+          <button class="secondary-btn" (click)="resetRating()" type="button">Reset rating</button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+
+<ng-template #supplierCell let-row>
+  <div>
+    <p class="font-semibold text-ink-900">{{ getValue(row, "name", "Name") }}</p>
+    <p class="text-xs text-ink-500">
+      Contact: {{ getValue(row, "contactPerson", "ContactPerson") || "-" }}
+    </p>
+    <p class="mt-1 text-xs text-ink-500">
+      Email: {{ getValue(row, "email", "Email") || "-" }} | Phone: {{ getValue(row, "phone", "Phone") || "-" }}
+    </p>
+    <p class="mt-1 text-xs text-ink-500">
+      Terms: {{ getValue(row, "paymentTerms", "PaymentTerms") || "-" }} | Tax ID: {{ getValue(row, "taxId", "TaxId") || "-" }}
+    </p>
+    <p class="mt-2 break-all font-mono text-[11px] text-ink-500">
+      ID: {{ getValue(row, "supplierId", "SupplierId") }}
+    </p>
+  </div>
+</ng-template>
+
+<ng-template #cityCell let-row>
+  {{ getValue(row, "city", "City") || "-" }}
+</ng-template>
+
+<ng-template #countryCell let-row>
+  {{ getValue(row, "country", "Country") || "-" }}
+</ng-template>
+
+<ng-template #leadTimeCell let-row>
+  {{ getValue(row, "leadTimeDays", "LeadTimeDays") || "-" }}
+</ng-template>
+
+<ng-template #ratingCell let-row>
+  {{ getValue(row, "rating", "Rating") || "-" }}
+</ng-template>
+
+<ng-template #actionsCell let-row>
+  <div class="flex flex-wrap gap-2">
+    <button class="secondary-btn px-4 py-2" (click)="handleEdit(row)" type="button">
+      Edit
+    </button>
+    <button
+      class="danger-btn px-4 py-2"
+      (click)="handleDeactivate(getValue(row, 'supplierId', 'SupplierId'))"
+      type="button"
+    >
+      Deactivate
+    </button>
+  </div>
+</ng-template>

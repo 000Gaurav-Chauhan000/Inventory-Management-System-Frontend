@@ -1,0 +1,363 @@
+<div class="space-y-8">
+  <app-page-header
+    eyebrow="Purchase"
+    [title]="view() === 'receive' ? 'Receive Goods' : 'Purchase orders'"
+    [description]="view() === 'receive' ? 'PO #' + receiveForm().poId + ' Receipt' : 'Manage and track your purchase orders.'"
+  ></app-page-header>
+
+  <app-floating-notice></app-floating-notice>
+
+  @if (view() === "list" && canBrowse) {
+    <section class="panel-soft p-6">
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Load Orders</p>
+      <div class="mt-3 rounded-2xl bg-white px-4 py-3 text-sm text-ink-600">
+        <span class="font-semibold text-ink-900">Current view:</span> {{ resultLabel() }}
+      </div>
+      <div class="mt-5 grid gap-4 md:grid-cols-2">
+        <select [ngModel]="activeLoadMode()" (ngModelChange)="activeLoadMode.set($event)">
+          @for (option of ORDER_LOAD_OPTIONS; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+
+        @if (activeLoadMode() === "id") {
+          <input
+            placeholder="PO ID"
+            [ngModel]="filters().id"
+            (ngModelChange)="filters.set(Object.assign({}, filters(), {id: $event}))"
+          />
+        }
+
+        @if (activeLoadMode() === "status") {
+          <input
+            placeholder="Status"
+            [ngModel]="filters().status"
+            (ngModelChange)="filters.set(Object.assign({}, filters(), {status: $event}))"
+          />
+        }
+
+        @if (activeLoadMode() === "supplier") {
+          <input
+            placeholder="Supplier ID"
+            [ngModel]="filters().supplierId"
+            (ngModelChange)="filters.set(Object.assign({}, filters(), {supplierId: $event}))"
+          />
+        }
+
+        @if (activeLoadMode() === "warehouse") {
+          <input
+            placeholder="Warehouse ID"
+            [ngModel]="filters().warehouseId"
+            (ngModelChange)="filters.set(Object.assign({}, filters(), {warehouseId: $event}))"
+          />
+        }
+
+        @if (activeLoadMode() === "dateRange") {
+          <input
+            type="date"
+            [ngModel]="filters().start"
+            (ngModelChange)="filters.set(Object.assign({}, filters(), {start: $event}))"
+          />
+          <input
+            type="date"
+            [ngModel]="filters().end"
+            (ngModelChange)="filters.set(Object.assign({}, filters(), {end: $event}))"
+          />
+        }
+      </div>
+
+      <div class="mt-5 flex flex-wrap gap-3">
+        <button class="primary-btn" (click)="handleLoadOrders()" type="button">
+          Load orders
+        </button>
+      </div>
+    </section>
+
+    <section class="panel-soft p-6">
+      <app-data-table [columns]="columns" [rows]="orders()"></app-data-table>
+    </section>
+  }
+
+  <div class="grid gap-4 xl:grid-cols-2">
+    @if (canCreate) {
+      <form class="panel-soft p-6" (ngSubmit)="handleCreate()">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Create PO</p>
+        <div class="mt-5 grid gap-4 md:grid-cols-2">
+          <label class="block text-sm font-medium text-ink-700">
+            Supplier ID
+            <input
+              class="mt-1 w-full"
+              placeholder="e.g. 1"
+              required
+              type="number"
+              [ngModel]="orderForm().supplierId"
+              (ngModelChange)="orderForm.set(Object.assign({}, orderForm(), {supplierId: $event}))"
+              name="supplierId"
+            />
+          </label>
+          <label class="block text-sm font-medium text-ink-700">
+            Warehouse ID
+            <input
+              class="mt-1 w-full"
+              placeholder="e.g. 2"
+              required
+              type="number"
+              [ngModel]="orderForm().warehouseId"
+              (ngModelChange)="orderForm.set(Object.assign({}, orderForm(), {warehouseId: $event}))"
+              name="warehouseId"
+            />
+          </label>
+          <label class="block text-sm font-medium text-ink-700">
+            Expected Delivery Date
+            <input
+              class="mt-1 w-full"
+              type="date"
+              [ngModel]="orderForm().expectedDate"
+              (ngModelChange)="orderForm.set(Object.assign({}, orderForm(), {expectedDate: $event}))"
+              name="expectedDate"
+            />
+          </label>
+          <label class="block text-sm font-medium text-ink-700">
+            Reference Number
+            <input
+              class="mt-1 w-full"
+              placeholder="e.g. PO-2023-01"
+              [ngModel]="orderForm().referenceNumber"
+              (ngModelChange)="orderForm.set(Object.assign({}, orderForm(), {referenceNumber: $event}))"
+              name="referenceNumber"
+            />
+          </label>
+          <label class="block text-sm font-medium text-ink-700 md:col-span-2">
+            Notes
+            <textarea
+              class="mt-1 w-full"
+              placeholder="Additional instructions..."
+              rows="3"
+              [ngModel]="orderForm().notes"
+              (ngModelChange)="orderForm.set(Object.assign({}, orderForm(), {notes: $event}))"
+              name="notes"
+            ></textarea>
+          </label>
+        </div>
+
+        <div class="mt-5 space-y-3">
+          @for (item of orderForm().items; track $index; let idx = $index) {
+            <div class="grid gap-3 rounded-3xl border border-ink-100 p-4 md:grid-cols-3">
+              <label class="block text-sm font-medium text-ink-700">
+                Product ID (GUID)
+                <input
+                  class="mt-1 w-full"
+                  placeholder="Product GUID"
+                  required
+                  [ngModel]="item.productId"
+                  (ngModelChange)="updateItem(idx, 'productId', $event)"
+                  [name]="'item_pid_'+idx"
+                />
+              </label>
+              <label class="block text-sm font-medium text-ink-700">
+                Quantity
+                <input
+                  class="mt-1 w-full"
+                  placeholder="Quantity"
+                  required
+                  type="number"
+                  [ngModel]="item.quantity"
+                  (ngModelChange)="updateItem(idx, 'quantity', $event)"
+                  [name]="'item_qty_'+idx"
+                />
+              </label>
+              <label class="block text-sm font-medium text-ink-700">
+                Unit Cost
+                <input
+                  class="mt-1 w-full"
+                  placeholder="Unit cost"
+                  required
+                  type="number"
+                  [ngModel]="item.unitCost"
+                  (ngModelChange)="updateItem(idx, 'unitCost', $event)"
+                  [name]="'item_cost_'+idx"
+                />
+              </label>
+            </div>
+          }
+        </div>
+
+        <div class="mt-4 flex flex-wrap gap-3">
+          <button class="secondary-btn" (click)="addLineItem()" type="button">
+            Add line item
+          </button>
+          <button class="primary-btn" type="submit">
+            Create purchase order
+          </button>
+        </div>
+      </form>
+    }
+
+    @if (canCreate) {
+      <form class="panel-soft p-6" (ngSubmit)="handleUpdate()">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Update PO</p>
+        <div class="mt-5 grid gap-4 md:grid-cols-2">
+          <input
+            placeholder="PO ID"
+            required
+            type="number"
+            [ngModel]="editForm().poId"
+            (ngModelChange)="editForm.set(Object.assign({}, editForm(), {poId: $event}))"
+            name="edit_poId"
+          />
+          <input
+            placeholder="Supplier ID"
+            required
+            type="number"
+            [ngModel]="editForm().supplierId"
+            (ngModelChange)="editForm.set(Object.assign({}, editForm(), {supplierId: $event}))"
+            name="edit_supplierId"
+          />
+          <input
+            placeholder="Warehouse ID"
+            required
+            type="number"
+            [ngModel]="editForm().warehouseId"
+            (ngModelChange)="editForm.set(Object.assign({}, editForm(), {warehouseId: $event}))"
+            name="edit_warehouseId"
+          />
+          <input
+            type="date"
+            [ngModel]="editForm().expectedDate"
+            (ngModelChange)="editForm.set(Object.assign({}, editForm(), {expectedDate: $event}))"
+            name="edit_expectedDate"
+          />
+          <input
+            class="md:col-span-2"
+            placeholder="Reference number"
+            [ngModel]="editForm().referenceNumber"
+            (ngModelChange)="editForm.set(Object.assign({}, editForm(), {referenceNumber: $event}))"
+            name="edit_ref"
+          />
+          <textarea
+            class="md:col-span-2"
+            placeholder="Notes"
+            rows="3"
+            [ngModel]="editForm().notes"
+            (ngModelChange)="editForm.set(Object.assign({}, editForm(), {notes: $event}))"
+            name="edit_notes"
+          ></textarea>
+        </div>
+
+        <button class="primary-btn mt-5" type="submit">
+          Save update
+        </button>
+      </form>
+    }
+
+    @if (view() === "receive" && canReceive) {
+      <div class="max-w-4xl mx-auto w-full px-4 mb-20 md:col-span-2">
+        <div class="panel-soft p-10">
+          <div class="flex items-center justify-between mb-10 pb-6 border-b border-ink-100">
+            <div>
+              <h3 class="text-3xl font-black tracking-tight text-ink-950">PO #{{ receiveForm().poId }}</h3>
+              <p class="text-xs font-bold uppercase tracking-widest text-ink-400 mt-1">Recording Goods Receipt</p>
+            </div>
+            <button 
+              class="text-[10px] font-black uppercase tracking-[0.2em] text-ink-400 hover:text-coral transition-colors" 
+              (click)="receiveForm.set({poId: '', items: [{lineItemId: '', receivedQty: 1, productId: '', quantity: 0, previouslyReceived: 0}]}); view.set('list');"
+              type="button"
+            >
+              &larr; Cancel
+            </button>
+          </div>
+
+          <form (ngSubmit)="handleReceive()">
+            <div class="space-y-4">
+              @for (item of receiveForm().items; track $index; let idx = $index) {
+                <div class="flex flex-col gap-6 p-6 rounded-3xl bg-ink-50/30 border border-ink-100 md:flex-row md:items-center">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-lg font-bold text-ink-900 truncate">
+                      {{ item.productId }}
+                    </p>
+                    <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-[10px] font-bold uppercase tracking-wider text-ink-400">
+                      <p>Ordered: <span class="text-ink-900">{{ item.quantity }}</span></p>
+                      <p>Received: <span class="text-ink-900">{{ item.previouslyReceived }}</span></p>
+                      <p>Remaining: <span class="text-coral">{{ item.quantity - item.previouslyReceived }}</span></p>
+                    </div>
+                  </div>
+                  <div class="w-full md:w-32 shrink-0">
+                    <input
+                      class="w-full text-center text-xl font-black py-3 px-4 rounded-xl bg-white border-2 border-ink-100 focus:border-coral focus:ring-0 transition-all"
+                      placeholder="0"
+                      required
+                      type="number"
+                      [ngModel]="item.receivedQty"
+                      (ngModelChange)="updateReceiveItem(idx, 'receivedQty', $event)"
+                      [name]="'recv_qty_'+idx"
+                    />
+                  </div>
+                </div>
+              }
+            </div>
+
+            <div class="mt-12 flex justify-center">
+              <button class="primary-btn px-12 py-4 text-base shadow-xl active:scale-95" type="submit">
+                Confirm Receipt
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<ng-template #poCell let-row>
+  <div>
+    <p class="font-semibold text-ink-900">PO #{{ getValue(row, "poId", "PoId") }}</p>
+    <p class="text-xs text-ink-500">{{ getValue(row, "status", "Status") }}</p>
+  </div>
+</ng-template>
+
+<ng-template #supplierCell let-row>
+  {{ getValue(row, "supplierId", "SupplierId") }}
+</ng-template>
+
+<ng-template #warehouseCell let-row>
+  {{ getValue(row, "warehouseId", "WarehouseId") }}
+</ng-template>
+
+<ng-template #totalCell let-row>
+  {{ formatCurrency(getValue(row, "totalAmount", "TotalAmount")) }}
+</ng-template>
+
+<ng-template #expectedCell let-row>
+  {{ formatDate(getValue(row, "expectedDate", "ExpectedDate")) }}
+</ng-template>
+
+<ng-template #itemsCell let-row>
+  <div class="space-y-1 text-xs text-ink-500">
+    @for (item of safeArray(getValue(row, "items", "Items")); track getValue(item, "lineItemId", "LineItemId") || getValue(item, "productId", "ProductId")) {
+      <p>
+        {{ getValue(item, "productId", "ProductId") }} &bull; {{ getValue(item, "receivedQty", "ReceivedQty") || 0 }} / {{ getValue(item, "quantity", "Quantity") }}
+      </p>
+    }
+  </div>
+</ng-template>
+
+<ng-template #actionsCell let-row>
+  <div class="flex flex-wrap gap-2">
+    @if (canCreate && getValue(row, "status", "Status") === "DRAFT") {
+      <button class="secondary-btn px-4 py-2" (click)="loadIntoEdit(row)" type="button">Edit</button>
+      <button class="primary-btn px-4 py-2" (click)="handleSubmitForApproval(getValue(row, 'poId', 'PoId'))" type="button">Submit</button>
+    }
+    
+    @if (canCreate && getValue(row, "status", "Status") !== "RECEIVED" && getValue(row, "status", "Status") !== "CANCELLED") {
+      <button class="danger-btn px-4 py-2" (click)="handleCancel(getValue(row, 'poId', 'PoId'))" type="button">Cancel</button>
+    }
+
+    @if (canApprove && getValue(row, "status", "Status") === "PENDING") {
+      <button class="primary-btn px-4 py-2" (click)="handleApprove(getValue(row, 'poId', 'PoId'))" type="button">Approve</button>
+    }
+
+    @if (canReceive && (getValue(row, "status", "Status")?.toUpperCase() === "APPROVED" || getValue(row, "status", "Status")?.toUpperCase() === "PARTIALLY_RECEIVED")) {
+      <button class="secondary-btn px-4 py-2" (click)="loadIntoReceive(row)" type="button">Receive</button>
+    }
+  </div>
+</ng-template>

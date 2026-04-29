@@ -1,0 +1,113 @@
+<div class="space-y-8">
+  <app-page-header
+    eyebrow="Profile"
+    title="Manage your personal account"
+    description="Every role can update profile details and change password from this page."
+  ></app-page-header>
+
+  <app-floating-notice></app-floating-notice>
+
+  <div class="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+    <section class="panel-soft p-6">
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Account Details</p>
+      <dl class="mt-5 grid gap-4 text-sm">
+        <div>
+          <dt class="text-ink-500">Full name</dt>
+          <dd class="mt-1 font-semibold text-ink-900">{{ user()?.fullName }}</dd>
+        </div>
+        <div>
+          <dt class="text-ink-500">Email</dt>
+          <dd class="mt-1 font-semibold text-ink-900">{{ user()?.email }}</dd>
+        </div>
+        <div>
+          <dt class="text-ink-500">Role</dt>
+          <dd class="mt-1 font-semibold text-ink-900">{{ user()?.role }}</dd>
+        </div>
+        <div>
+          <dt class="text-ink-500">Created</dt>
+          <dd class="mt-1 font-semibold text-ink-900">{{ formatDate(user()?.createdAt) }}</dd>
+        </div>
+        <div>
+          <dt class="text-ink-500">Last login</dt>
+          <dd class="mt-1 font-semibold text-ink-900">{{ formatDate(user()?.lastLoginAt) }}</dd>
+        </div>
+      </dl>
+      <div class="mt-5">
+        <button class="secondary-btn" (click)="handleSessionRefresh()" type="button">
+          Refresh session token
+        </button>
+      </div>
+    </section>
+
+    <section class="grid gap-4">
+      <form class="panel-soft p-6" (ngSubmit)="handleProfileSubmit()">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Update Profile</p>
+        <div class="mt-5 grid gap-4 md:grid-cols-2">
+          <div class="md:col-span-2">
+            <label class="mb-2 block text-sm font-medium text-ink-700">Full name</label>
+            <input
+              required
+              [ngModel]="profileForm().fullName"
+              (ngModelChange)="profileForm.set(Object.assign({}, profileForm(), {fullName: $event}))"
+              name="fullName"
+            />
+          </div>
+          <div>
+            <label class="mb-2 block text-sm font-medium text-ink-700">Phone</label>
+            <input
+              [ngModel]="profileForm().phone"
+              (ngModelChange)="profileForm.set(Object.assign({}, profileForm(), {phone: $event}))"
+              name="phone"
+            />
+          </div>
+          <div>
+            <label class="mb-2 block text-sm font-medium text-ink-700">Department</label>
+            <input
+              [ngModel]="profileForm().department"
+              (ngModelChange)="profileForm.set(Object.assign({}, profileForm(), {department: $event}))"
+              name="department"
+            />
+          </div>
+        </div>
+
+        <div class="mt-5 flex justify-center">
+          <button class="primary-btn" type="submit">
+            Save profile
+          </button>
+        </div>
+      </form>
+
+      <form class="panel-soft p-6" (ngSubmit)="handlePasswordSubmit()">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Change Password</p>
+        <div class="mt-5 grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="mb-2 block text-sm font-medium text-ink-700">Old password</label>
+            <input
+              required
+              type="password"
+              [ngModel]="passwordForm().oldPassword"
+              (ngModelChange)="passwordForm.set(Object.assign({}, passwordForm(), {oldPassword: $event}))"
+              name="oldPassword"
+            />
+          </div>
+          <div>
+            <label class="mb-2 block text-sm font-medium text-ink-700">New password</label>
+            <input
+              required
+              type="password"
+              [ngModel]="passwordForm().newPassword"
+              (ngModelChange)="passwordForm.set(Object.assign({}, passwordForm(), {newPassword: $event}))"
+              name="newPassword"
+            />
+          </div>
+        </div>
+
+        <div class="mt-5 flex justify-center">
+          <button class="primary-btn" type="submit">
+            Update password
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>

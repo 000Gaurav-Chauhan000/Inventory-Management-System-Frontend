@@ -1,0 +1,296 @@
+<div class="space-y-8">
+  <app-page-header
+    eyebrow="Warehouse"
+    title="Warehouses and stock operations"
+  >
+    <ng-template #actions>
+      <button class="secondary-btn" (click)="handleLoadLowStock()" type="button">
+        Load low stock
+      </button>
+    </ng-template>
+  </app-page-header>
+  
+  <p class="text-ink-600 mt-[-1.5rem]">Admins manage warehouse records, staff update and reserve stock, and staff or managers can transfer inventory.</p>
+
+  <app-floating-notice></app-floating-notice>
+
+  <section class="panel-soft p-6">
+    <div class="mb-4 grid gap-3 md:grid-cols-[minmax(0,220px)_auto_auto]">
+      <input
+        placeholder="Lookup warehouse by ID"
+        type="number"
+        [ngModel]="warehouseLookupId()"
+        (ngModelChange)="warehouseLookupId.set($event)"
+      />
+      <button class="secondary-btn md:w-40" (click)="handleWarehouseLookup()" type="button">
+        Find warehouse
+      </button>
+      <button
+        class="secondary-btn md:w-36"
+        (click)="showAll()"
+        type="button"
+      >
+        Show all
+      </button>
+    </div>
+    <app-data-table [columns]="columns" [rows]="warehouses()"></app-data-table>
+  </section>
+
+  <div class="grid gap-6 xl:grid-cols-2">
+    @if (isAdmin) {
+      <form class="panel-soft p-6" (ngSubmit)="handleWarehouseSubmit()">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">
+          {{ editingId() ? "Edit Warehouse" : "Create Warehouse" }}
+        </p>
+        <div class="mt-5 grid gap-4 md:grid-cols-2">
+          <div class="md:col-span-2">
+            <label class="mb-2 block text-sm font-medium text-ink-700">Name</label>
+            <input required [ngModel]="warehouseForm().name" (ngModelChange)="warehouseForm.set(Object.assign({}, warehouseForm(), {name: $event}))" name="name" />
+          </div>
+          <div>
+            <label class="mb-2 block text-sm font-medium text-ink-700">Location</label>
+            <input [ngModel]="warehouseForm().location" (ngModelChange)="warehouseForm.set(Object.assign({}, warehouseForm(), {location: $event}))" name="location" />
+          </div>
+          <div>
+            <label class="mb-2 block text-sm font-medium text-ink-700">Address</label>
+            <input [ngModel]="warehouseForm().address" (ngModelChange)="warehouseForm.set(Object.assign({}, warehouseForm(), {address: $event}))" name="address" />
+          </div>
+          <div>
+            <label class="mb-2 block text-sm font-medium text-ink-700">Manager ID</label>
+            <input type="number" [ngModel]="warehouseForm().managerId" (ngModelChange)="warehouseForm.set(Object.assign({}, warehouseForm(), {managerId: $event}))" name="managerId" />
+          </div>
+          <div>
+            <label class="mb-2 block text-sm font-medium text-ink-700">Capacity</label>
+            <input required type="number" [ngModel]="warehouseForm().capacity" (ngModelChange)="warehouseForm.set(Object.assign({}, warehouseForm(), {capacity: $event}))" name="capacity" />
+          </div>
+          <div class="md:col-span-2">
+            <label class="mb-2 block text-sm font-medium text-ink-700">Phone</label>
+            <input [ngModel]="warehouseForm().phone" (ngModelChange)="warehouseForm.set(Object.assign({}, warehouseForm(), {phone: $event}))" name="phone" />
+          </div>
+        </div>
+
+        <div class="mt-5 flex flex-wrap gap-3">
+          <button class="primary-btn" type="submit">
+            {{ editingId() ? "Save warehouse" : "Create warehouse" }}
+          </button>
+          @if (editingId()) {
+            <button
+              class="secondary-btn"
+              (click)="editingId.set(''); warehouseForm.set({name: '', location: '', address: '', managerId: 0, capacity: 0, phone: ''})"
+              type="button"
+            >
+              Cancel edit
+            </button>
+          }
+        </div>
+      </form>
+    }
+
+    <section class="panel-soft p-6">
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Check Stock Level</p>
+      <form class="mt-5 grid gap-4 md:grid-cols-2" (ngSubmit)="handleStockLookup()">
+        <div>
+          <label class="mb-2 block text-sm font-medium text-ink-700">Warehouse</label>
+          <select required [ngModel]="stockForm().warehouseId" (ngModelChange)="stockForm.set(Object.assign({}, stockForm(), {warehouseId: $event}))" name="warehouseId">
+            <option value="">Select warehouse</option>
+            @for (wh of warehouses(); track getValue(wh, "warehouseId", "WarehouseId")) {
+              <option [value]="getValue(wh, 'warehouseId', 'WarehouseId')">
+                #{{ getValue(wh, "warehouseId", "WarehouseId") }} - {{ getValue(wh, "name", "Name") }}
+              </option>
+            }
+          </select>
+        </div>
+        <div>
+          <label class="mb-2 block text-sm font-medium text-ink-700">Product</label>
+          <input list="warehouse-product-options" required [ngModel]="stockForm().productId" (ngModelChange)="stockForm.set(Object.assign({}, stockForm(), {productId: $event}))" name="productId" placeholder="Type or select product..." />
+        </div>
+        <div class="md:col-span-2">
+          <button class="primary-btn" type="submit">Lookup stock</button>
+        </div>
+      </form>
+
+      @if (stockLookup()) {
+        <div class="mt-5 rounded-3xl bg-white p-5 border border-ink-100">
+          <p class="text-xs font-bold uppercase tracking-widest text-ink-400 mb-4">Stock snapshot</p>
+          <div class="grid gap-6 md:grid-cols-2">
+            <div>
+              <p class="text-[10px] uppercase tracking-[0.2em] text-ink-400 font-bold">Total Quantity</p>
+              <p class="mt-1 text-3xl font-black text-ink-950">{{ getValue(stockLookup(), "quantity", "Quantity") }}</p>
+            </div>
+            <div>
+              <p class="text-[10px] uppercase tracking-[0.2em] text-ink-400 font-bold">Reserved</p>
+              <p class="mt-1 text-3xl font-black text-ink-950">
+                {{ getValue(stockLookup(), "reservedQuantity", "ReservedQuantity") }}
+              </p>
+            </div>
+          </div>
+        </div>
+      }
+    </section>
+
+    @if (canUpdateStock) {
+      <section class="panel-soft p-6">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Staff Stock Actions</p>
+        <div class="mt-5 grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="mb-2 block text-sm font-medium text-ink-700">Warehouse</label>
+            <select [ngModel]="stockForm().warehouseId" (ngModelChange)="stockForm.set(Object.assign({}, stockForm(), {warehouseId: $event}))">
+              <option value="">Select warehouse</option>
+              @for (wh of warehouses(); track getValue(wh, "warehouseId", "WarehouseId")) {
+                <option [value]="getValue(wh, 'warehouseId', 'WarehouseId')">
+                  #{{ getValue(wh, "warehouseId", "WarehouseId") }} - {{ getValue(wh, "name", "Name") }}
+                </option>
+              }
+            </select>
+          </div>
+          <div>
+            <label class="mb-2 block text-sm font-medium text-ink-700">Product</label>
+            <input list="warehouse-product-options" [ngModel]="stockForm().productId" (ngModelChange)="stockForm.set(Object.assign({}, stockForm(), {productId: $event}))" />
+          </div>
+          <div class="md:col-span-2">
+            <label class="mb-2 block text-sm font-medium text-ink-700">Quantity</label>
+            <input type="number" [ngModel]="stockForm().quantity" (ngModelChange)="stockForm.set(Object.assign({}, stockForm(), {quantity: $event}))" />
+          </div>
+        </div>
+
+        <div class="mt-5 flex flex-wrap gap-3">
+          <button 
+            [class]="stockActionLoading() === 'update' ? 'primary-btn' : 'secondary-btn'"
+            (click)="handleStockAction('update')" 
+            type="button"
+            [disabled]="stockActionLoading() !== null"
+          >
+            {{ stockActionLoading() === "update" ? "Updating..." : "Update stock" }}
+          </button>
+          <button 
+            [class]="stockActionLoading() === 'reserve' ? 'primary-btn' : 'secondary-btn'"
+            (click)="handleStockAction('reserve')" 
+            type="button"
+            [disabled]="stockActionLoading() !== null"
+          >
+            {{ stockActionLoading() === "reserve" ? "Reserving..." : "Reserve" }}
+          </button>
+          <button 
+            [class]="stockActionLoading() === 'release' ? 'primary-btn' : 'secondary-btn'"
+            (click)="handleStockAction('release')" 
+            type="button"
+            [disabled]="stockActionLoading() !== null"
+          >
+            {{ stockActionLoading() === "release" ? "Releasing..." : "Release" }}
+          </button>
+        </div>
+      </section>
+    }
+
+    @if (canTransfer) {
+      <form class="panel-soft p-6" (ngSubmit)="handleTransfer()">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Transfer Stock</p>
+        <div class="mt-5 grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="mb-2 block text-sm font-medium text-ink-700">From warehouse</label>
+            <select required [ngModel]="transferForm().fromWarehouse" (ngModelChange)="transferForm.set(Object.assign({}, transferForm(), {fromWarehouse: $event}))" name="fromWarehouse">
+              <option value="">Source</option>
+              @for (wh of warehouses(); track getValue(wh, "warehouseId", "WarehouseId")) {
+                <option [value]="getValue(wh, 'warehouseId', 'WarehouseId')">
+                  #{{ getValue(wh, "warehouseId", "WarehouseId") }} - {{ getValue(wh, "name", "Name") }}
+                </option>
+              }
+            </select>
+          </div>
+          <div>
+            <label class="mb-2 block text-sm font-medium text-ink-700">To warehouse</label>
+            <select required [ngModel]="transferForm().toWarehouse" (ngModelChange)="transferForm.set(Object.assign({}, transferForm(), {toWarehouse: $event}))" name="toWarehouse">
+              <option value="">Destination</option>
+              @for (wh of warehouses(); track getValue(wh, "warehouseId", "WarehouseId")) {
+                <option [value]="getValue(wh, 'warehouseId', 'WarehouseId')">
+                  #{{ getValue(wh, "warehouseId", "WarehouseId") }} - {{ getValue(wh, "name", "Name") }}
+                </option>
+              }
+            </select>
+          </div>
+          <div class="md:col-span-2">
+            <label class="mb-2 block text-sm font-medium text-ink-700">Product</label>
+            <input list="warehouse-product-options" required [ngModel]="transferForm().productId" (ngModelChange)="transferForm.set(Object.assign({}, transferForm(), {productId: $event}))" name="productId" />
+          </div>
+          <div class="md:col-span-2">
+            <label class="mb-2 block text-sm font-medium text-ink-700">Quantity</label>
+            <input required type="number" [ngModel]="transferForm().quantity" (ngModelChange)="transferForm.set(Object.assign({}, transferForm(), {quantity: $event}))" name="quantity" />
+          </div>
+        </div>
+
+        <button class="primary-btn mt-5" type="submit">
+          Transfer stock
+        </button>
+      </form>
+    }
+  </div>
+
+  <section class="panel-soft p-6">
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Low Stock by Warehouse</p>
+    <div class="mt-5">
+      <app-data-table
+        [columns]="lsColumns"
+        emptyMessage="Click 'Load low stock' to view low stock warehouse items."
+        [rows]="lowStock()"
+      ></app-data-table>
+    </div>
+  </section>
+
+  <datalist id="warehouse-product-options">
+    @for (product of products(); track getValue(product, "productId", "ProductId")) {
+      <option [value]="getValue(product, 'productId', 'ProductId')">
+        {{ getValue(product, "sku", "Sku") }} - {{ getValue(product, "name", "Name") }}
+      </option>
+    }
+  </datalist>
+</div>
+
+<!-- Table Templates -->
+<ng-template #warehouseCell let-row>
+  <div>
+    <p class="font-semibold text-ink-900">{{ getValue(row, "name", "Name") }}</p>
+    <p class="text-xs text-ink-500">{{ getValue(row, "location", "Location") }}</p>
+    <p class="mt-1 text-xs text-ink-500">Address: {{ getValue(row, "address", "Address") || "-" }}</p>
+    <p class="mt-1 text-xs text-ink-500">Phone: {{ getValue(row, "phone", "Phone") || "-" }}</p>
+    <p class="mt-2 font-mono text-[11px] text-ink-500">
+      ID: {{ getValue(row, "warehouseId", "WarehouseId") }}
+    </p>
+  </div>
+</ng-template>
+
+<ng-template #capacityCell let-row>
+  {{ getValue(row, "usedCapacity", "UsedCapacity") || 0 }} / {{ getValue(row, "capacity", "Capacity") }}
+</ng-template>
+
+<ng-template #managerCell let-row>
+  {{ getValue(row, "managerId", "ManagerId") || "-" }}
+</ng-template>
+
+<ng-template #createdCell let-row>
+  {{ formatDate(getValue(row, "createdAt", "CreatedAt")) }}
+</ng-template>
+
+<ng-template #actionsCell let-row>
+  <div class="flex flex-wrap gap-2">
+    <button class="secondary-btn px-4 py-2" (click)="handleEdit(row)" type="button">
+      Edit
+    </button>
+    <button
+      class="danger-btn px-4 py-2"
+      (click)="handleDeactivate(getValue(row, 'warehouseId', 'WarehouseId'))"
+      type="button"
+    >
+      Deactivate
+    </button>
+  </div>
+</ng-template>
+
+<ng-template #lsProdIdCell let-row>
+  {{ getValue(row, "productId", "ProductId") }}
+</ng-template>
+<ng-template #lsWhIdCell let-row>
+  {{ getValue(row, "warehouseId", "WarehouseId") }}
+</ng-template>
+<ng-template #lsQtyCell let-row>
+  {{ getValue(row, "quantity", "Quantity") }}
+</ng-template>

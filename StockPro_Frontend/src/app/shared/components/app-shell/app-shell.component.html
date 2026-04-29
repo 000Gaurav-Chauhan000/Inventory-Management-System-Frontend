@@ -1,0 +1,38 @@
+<div class="min-h-screen px-4 py-4 sm:px-6 lg:px-8">
+  <div class="mx-auto grid max-w-7xl gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+    <aside class="panel p-6">
+      <div class="mt-6 rounded-3xl bg-cream px-5 py-4">
+        <p class="text-xs uppercase tracking-[0.2em] text-ink-500">Signed in as</p>
+        <h2 class="mt-2 text-xl">{{ user()?.fullName || "StockPro User" }}</h2>
+        <p class="mt-1 text-sm text-ink-600">{{ ROLE_LABELS[user()?.role || ''] || user()?.role }}</p>
+        <p class="mt-1 text-sm text-ink-500">{{ user()?.email }}</p>
+      </div>
+
+      <nav class="mt-6 grid gap-2">
+        @for (item of allowedItems(); track item.to) {
+          <a
+            [routerLink]="item.to"
+            routerLinkActive="bg-ink-950 text-cream"
+            [routerLinkActiveOptions]="{exact: item.to === '/'}"
+            class="rounded-2xl px-4 py-3 text-sm font-medium transition text-ink-700 hover:bg-ink-100 hover:text-ink-950"
+            [class.bg-ink-950]="false"
+          >
+            {{ item.label }}
+          </a>
+        }
+      </nav>
+
+      <button class="danger-btn mt-6 w-full" (click)="logout()" type="button">
+        Sign out
+      </button>
+    </aside>
+
+    <main class="space-y-4">
+      <div class="panel overflow-hidden">
+        <div class="p-6">
+          <router-outlet></router-outlet>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>

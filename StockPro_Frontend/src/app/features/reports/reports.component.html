@@ -1,0 +1,65 @@
+<div class="space-y-8">
+  <app-page-header
+    eyebrow="Analytics"
+    title="Reports and KPI exports"
+    description="Managers and admins can query the reporting microservice and download the generated inventory report."
+  ></app-page-header>
+
+  <app-floating-notice></app-floating-notice>
+
+  <section class="panel-soft p-6">
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Choose Report</p>
+    <div class="mt-5 flex flex-wrap gap-3">
+      @for (action of availableReports; track action.value) {
+        <button
+          [class]="selectedReport?.value === action.value ? 'primary-btn' : 'secondary-btn'"
+          (click)="activeReport.set(action.value)"
+          type="button"
+        >
+          {{ action.label }}
+        </button>
+      }
+    </div>
+
+    <div class="mt-5 grid gap-4 md:grid-cols-2">
+      @if (selectedReport?.requires?.includes("warehouseId")) {
+        <input
+          placeholder="Warehouse ID"
+          type="number"
+          [ngModel]="filters().warehouseId"
+          (ngModelChange)="filters.set(Object.assign({}, filters(), {warehouseId: $event}))"
+        />
+      }
+
+      @if (selectedReport?.requires?.includes("dateRange")) {
+        <input
+          type="date"
+          [ngModel]="filters().start"
+          (ngModelChange)="filters.set(Object.assign({}, filters(), {start: $event}))"
+        />
+        <input
+          type="date"
+          [ngModel]="filters().end"
+          (ngModelChange)="filters.set(Object.assign({}, filters(), {end: $event}))"
+        />
+      }
+    </div>
+
+    <div class="mt-5 flex flex-wrap gap-3">
+      <button class="primary-btn" (click)="handleRunReport()" type="button">
+        Run report
+      </button>
+      <button class="danger-btn" (click)="generateReportFile()" type="button">
+        Download report
+      </button>
+    </div>
+  </section>
+
+  <section class="panel-soft p-6">
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Current Result</p>
+    <h3 class="mt-3 text-2xl">{{ context() }}</h3>
+    <div class="mt-5">
+      <app-data-table [columns]="dynamicColumns" [rows]="rows().length ? rows() : single()" emptyMessage="No report data loaded yet."></app-data-table>
+    </div>
+  </section>
+</div>

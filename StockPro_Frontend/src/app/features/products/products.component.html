@@ -1,0 +1,222 @@
+<div class="space-y-8">
+  <app-page-header
+    eyebrow="Catalogue"
+    title="Products"
+  >
+    <ng-template #actions>
+      <div class="flex flex-wrap gap-2">
+        <button class="secondary-btn" (click)="handleLowStock()" type="button">
+          Load low stock
+        </button>
+      </div>
+    </ng-template>
+  </app-page-header>
+  
+  <p class="text-ink-600 mt-[-1.5rem]">Managers can create and maintain products, while all internal roles can browse and search the catalogue.</p>
+
+  <app-floating-notice></app-floating-notice>
+
+  <section class="panel-soft p-6">
+    <div class="grid gap-3 md:grid-cols-[220px_minmax(0,1fr)_auto_auto]">
+      <select [ngModel]="lookupMode()" (ngModelChange)="lookupMode.set($event)">
+        <option value="name">Search by name</option>
+        <option value="id">Lookup by product ID</option>
+        <option value="sku">Lookup by SKU</option>
+        <option value="category">Filter by category</option>
+        <option value="brand">Filter by brand</option>
+        <option value="barcode">Lookup by barcode</option>
+      </select>
+      <input
+        [placeholder]="lookupMode() === 'id' ? 'Enter product ID' : lookupMode() === 'sku' ? 'Enter SKU' : lookupMode() === 'category' ? 'Enter category' : lookupMode() === 'brand' ? 'Enter brand' : lookupMode() === 'barcode' ? 'Enter barcode' : 'Search by product name'"
+        [ngModel]="lookupValue()" (ngModelChange)="lookupValue.set($event)"
+      />
+      <button class="primary-btn md:w-40" (click)="handleLookup()" type="button">
+        Run lookup
+      </button>
+      <button
+        class="secondary-btn md:w-36"
+        (click)="lookupMode.set('name'); lookupValue.set(''); handleRefresh()"
+        type="button"
+      >
+        Reset
+      </button>
+    </div>
+  </section>
+
+  <div class="grid gap-4 2xl:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)]">
+    <section class="panel-soft min-w-0 p-6">
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Product List</p>
+      <div class="mt-5">
+        <app-data-table [columns]="columns" [rows]="products()"></app-data-table>
+      </div>
+    </section>
+
+    <section class="grid min-w-0 content-start gap-4">
+      @if (canManage) {
+        <form class="panel-soft self-start p-6" (ngSubmit)="handleSubmit()">
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">
+            {{ editingId() ? "Edit Product" : "Create Product" }}
+          </p>
+
+          <div class="mt-5 grid gap-4 md:grid-cols-2">
+            <div>
+              <label class="mb-2 block text-sm font-medium text-ink-700">SKU</label>
+              <input required [ngModel]="form().sku" (ngModelChange)="form.set(Object.assign({}, form(), {sku: $event}))" name="sku" />
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-medium text-ink-700">Barcode</label>
+              <input [ngModel]="form().barcode" (ngModelChange)="form.set(Object.assign({}, form(), {barcode: $event}))" name="barcode" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="mb-2 block text-sm font-medium text-ink-700">Name</label>
+              <input required [ngModel]="form().name" (ngModelChange)="form.set(Object.assign({}, form(), {name: $event}))" name="name" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="mb-2 block text-sm font-medium text-ink-700">Description</label>
+              <textarea rows="3" [ngModel]="form().description" (ngModelChange)="form.set(Object.assign({}, form(), {description: $event}))" name="description"></textarea>
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-medium text-ink-700">Category</label>
+              <input required [ngModel]="form().category" (ngModelChange)="form.set(Object.assign({}, form(), {category: $event}))" name="category" />
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-medium text-ink-700">Brand</label>
+              <input [ngModel]="form().brand" (ngModelChange)="form.set(Object.assign({}, form(), {brand: $event}))" name="brand" />
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-medium text-ink-700">Unit</label>
+              <input [ngModel]="form().unitOfMeasure" (ngModelChange)="form.set(Object.assign({}, form(), {unitOfMeasure: $event}))" name="unitOfMeasure" />
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-medium text-ink-700">Image URL</label>
+              <input [ngModel]="form().imageUrl" (ngModelChange)="form.set(Object.assign({}, form(), {imageUrl: $event}))" name="imageUrl" />
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-medium text-ink-700">Cost price</label>
+              <input type="number" [ngModel]="form().costPrice" (ngModelChange)="form.set(Object.assign({}, form(), {costPrice: $event}))" name="costPrice" />
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-medium text-ink-700">Selling price</label>
+              <input type="number" [ngModel]="form().sellingPrice" (ngModelChange)="form.set(Object.assign({}, form(), {sellingPrice: $event}))" name="sellingPrice" />
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-medium text-ink-700">Reorder level</label>
+              <input type="number" [ngModel]="form().reorderLevel" (ngModelChange)="form.set(Object.assign({}, form(), {reorderLevel: $event}))" name="reorderLevel" />
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-medium text-ink-700">Max stock</label>
+              <input type="number" [ngModel]="form().maxStockLevel" (ngModelChange)="form.set(Object.assign({}, form(), {maxStockLevel: $event}))" name="maxStockLevel" />
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-medium text-ink-700">Lead time days</label>
+              <input type="number" [ngModel]="form().leadTimeDays" (ngModelChange)="form.set(Object.assign({}, form(), {leadTimeDays: $event}))" name="leadTimeDays" />
+            </div>
+            <div class="flex items-center gap-3 rounded-2xl bg-cream px-4 py-4 md:col-span-2 md:pt-4">
+              <input type="checkbox" class="h-5 w-5 shrink-0" [ngModel]="form().isActive" (ngModelChange)="form.set(Object.assign({}, form(), {isActive: $event}))" name="isActive" />
+              <span class="text-sm text-ink-700">Active product</span>
+            </div>
+          </div>
+
+          <div class="mt-5 flex flex-wrap gap-3">
+            <button class="primary-btn" type="submit">
+              {{ editingId() ? "Save changes" : "Create product" }}
+            </button>
+            @if (editingId()) {
+              <button
+                class="secondary-btn"
+                (click)="editingId.set(''); form.set({sku: '', name: '', description: '', category: '', brand: '', unitOfMeasure: '', costPrice: 0, sellingPrice: 0, reorderLevel: 0, maxStockLevel: 0, leadTimeDays: 0, imageUrl: '', isActive: true, barcode: ''})"
+                type="button"
+              >
+                Cancel edit
+              </button>
+            }
+          </div>
+        </form>
+      }
+
+      <section class="panel-soft p-6">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Low Stock Snapshot</p>
+        <div class="mt-5">
+          <app-data-table
+            [columns]="lsColumns"
+            emptyMessage="Use the low stock button to load products under threshold."
+            [rows]="lowStock()"
+          ></app-data-table>
+        </div>
+      </section>
+    </section>
+  </div>
+</div>
+
+<ng-template #productCell let-row>
+  <div>
+    <p class="font-semibold text-ink-900">{{ getValue(row, "name", "Name") }}</p>
+    <p class="text-xs text-ink-500">
+      SKU: {{ getValue(row, "sku", "Sku") }} | Category: {{ getValue(row, "category", "Category") || "-" }}
+    </p>
+    <p class="mt-1 text-xs text-ink-500">
+      Brand: {{ getValue(row, "brand", "Brand") || "-" }} | Unit: {{ getValue(row, "unitOfMeasure", "UnitOfMeasure") || "-" }}
+    </p>
+    <p class="mt-1 text-xs text-ink-500">
+      Barcode: {{ getValue(row, "barcode", "Barcode") || "-" }} | Cost: {{ formatCurrency(getValue(row, "costPrice", "CostPrice")) }}
+    </p>
+    <p class="mt-2 text-xs text-ink-600">{{ getValue(row, "description", "Description") || "No description added." }}</p>
+    <p class="mt-2 break-all font-mono text-[11px] text-ink-500">
+      ID: {{ getValue(row, "productId", "ProductId") }}
+    </p>
+  </div>
+</ng-template>
+
+<ng-template #priceCell let-row>
+  {{ formatCurrency(getValue(row, "sellingPrice", "SellingPrice")) }}
+</ng-template>
+
+<ng-template #rulesCell let-row>
+  <div class="text-xs text-ink-600">
+    <p>Reorder: {{ getValue(row, "reorderLevel", "ReorderLevel") || 0 }}</p>
+    <p>Max: {{ getValue(row, "maxStockLevel", "MaxStockLevel") || 0 }}</p>
+    <p>Lead Time: {{ getValue(row, "leadTimeDays", "LeadTimeDays") || 0 }} days</p>
+  </div>
+</ng-template>
+
+<ng-template #statusCell let-row>
+  <span
+    class="tag"
+    [ngClass]="getValue(row, 'isActive', 'IsActive') ? 'bg-mint/30 text-ink-950' : 'bg-coral/10 text-coral'"
+  >
+    {{ getValue(row, "isActive", "IsActive") ? "Active" : "Inactive" }}
+  </span>
+</ng-template>
+
+<ng-template #actionsCell let-row>
+  <div class="flex flex-wrap gap-2">
+    <button class="secondary-btn px-4 py-2" (click)="handleEdit(row)" type="button">
+      Edit
+    </button>
+    <button
+      class="danger-btn px-4 py-2"
+      (click)="handleDeactivate(getValue(row, 'productId', 'ProductId'))"
+      type="button"
+    >
+      Deactivate
+    </button>
+    <button
+      class="secondary-btn border-coral/40 px-4 py-2 text-coral hover:border-coral hover:bg-coral/10"
+      (click)="handleDelete(getValue(row, 'productId', 'ProductId'))"
+      type="button"
+    >
+      Delete
+    </button>
+  </div>
+</ng-template>
+
+<ng-template #lsProductCell let-row>
+  <div>
+    <p class="font-semibold text-ink-900">
+      {{ getValue(row, "name", "Name") || getValue(row, "sku", "Sku") }}
+    </p>
+    <p class="mt-1 break-all font-mono text-[11px] text-ink-500">
+      ID: {{ getValue(row, "productId", "ProductId") }}
+    </p>
+  </div>
+</ng-template>

@@ -1,0 +1,190 @@
+<div class="space-y-8">
+  <app-page-header
+    eyebrow="Movement"
+    title="Stock movement audit trail"
+  ></app-page-header>
+  <p class="text-ink-600 mt-[-1.5rem]">Staff can record movements, managers and admins can run full movement analytics, and every signed-in role can inspect movement history allowed by the backend.</p>
+
+  <app-floating-notice></app-floating-notice>
+
+  <div class="grid gap-4 xl:grid-cols-2">
+    @if (canRecord) {
+      <form class="panel-soft p-6" (ngSubmit)="handleRecord()">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Record Movement</p>
+        <div class="mt-5 grid gap-4 md:grid-cols-2">
+          <input
+            placeholder="Product ID"
+            required
+            [ngModel]="recordForm().productId"
+            (ngModelChange)="recordForm.set(Object.assign({}, recordForm(), {productId: $event}))"
+            name="productId"
+          />
+          <input
+            placeholder="Warehouse ID"
+            required
+            type="number"
+            [ngModel]="recordForm().warehouseId"
+            (ngModelChange)="recordForm.set(Object.assign({}, recordForm(), {warehouseId: $event}))"
+            name="warehouseId"
+          />
+          <select
+            [ngModel]="recordForm().movementType"
+            (ngModelChange)="recordForm.set(Object.assign({}, recordForm(), {movementType: $event}))"
+            name="movementType"
+          >
+            @for (type of MOVEMENT_TYPES; track type) {
+              <option [value]="type">{{ type }}</option>
+            }
+          </select>
+          <input
+            placeholder="Quantity"
+            required
+            type="number"
+            [ngModel]="recordForm().quantity"
+            (ngModelChange)="recordForm.set(Object.assign({}, recordForm(), {quantity: $event}))"
+            name="quantity"
+          />
+          <input
+            placeholder="Reference type"
+            [ngModel]="recordForm().referenceType"
+            (ngModelChange)="recordForm.set(Object.assign({}, recordForm(), {referenceType: $event}))"
+            name="referenceType"
+          />
+          <input
+            placeholder="Reference ID"
+            type="number"
+            [ngModel]="recordForm().referenceId"
+            (ngModelChange)="recordForm.set(Object.assign({}, recordForm(), {referenceId: $event}))"
+            name="referenceId"
+          />
+          <input
+            placeholder="Unit cost"
+            type="number"
+            [ngModel]="recordForm().unitCost"
+            (ngModelChange)="recordForm.set(Object.assign({}, recordForm(), {unitCost: $event}))"
+            name="unitCost"
+          />
+          <textarea
+            class="md:col-span-2"
+            placeholder="Notes"
+            rows="3"
+            [ngModel]="recordForm().notes"
+            (ngModelChange)="recordForm.set(Object.assign({}, recordForm(), {notes: $event}))"
+            name="notes"
+          ></textarea>
+        </div>
+
+        <button class="primary-btn mt-5" type="submit">
+          Record movement
+        </button>
+      </form>
+    }
+
+    <section class="panel-soft p-6">
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Load Movement Data</p>
+      <div class="mt-5 grid gap-4 md:grid-cols-2">
+        <select [ngModel]="currentLoadMode" (ngModelChange)="activeLoadMode.set($event)" name="currentLoadMode">
+          @for (option of availableLoadModes; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+
+        @if (['product', 'stockin', 'stockout', 'history'].includes(currentLoadMode)) {
+          <input
+            placeholder="Product ID"
+            [ngModel]="filters().productId"
+            (ngModelChange)="filters.set(Object.assign({}, filters(), {productId: $event}))"
+          />
+        }
+
+        @if (['warehouse', 'history'].includes(currentLoadMode)) {
+          <input
+            placeholder="Warehouse ID"
+            [ngModel]="filters().warehouseId"
+            (ngModelChange)="filters.set(Object.assign({}, filters(), {warehouseId: $event}))"
+          />
+        }
+
+        @if (currentLoadMode === 'reference') {
+          <input
+            placeholder="Reference ID"
+            [ngModel]="filters().referenceId"
+            (ngModelChange)="filters.set(Object.assign({}, filters(), {referenceId: $event}))"
+          />
+        }
+
+        @if (currentLoadMode === 'user') {
+          <input
+            placeholder="User ID"
+            [ngModel]="filters().userId"
+            (ngModelChange)="filters.set(Object.assign({}, filters(), {userId: $event}))"
+          />
+        }
+
+        @if (currentLoadMode === 'type') {
+          <select [ngModel]="filters().type" (ngModelChange)="filters.set(Object.assign({}, filters(), {type: $event}))">
+            @for (type of MOVEMENT_TYPES; track type) {
+              <option [value]="type">{{ type }}</option>
+            }
+          </select>
+        }
+
+        @if (currentLoadMode === 'date') {
+          <input
+            type="date"
+            [ngModel]="filters().start"
+            (ngModelChange)="filters.set(Object.assign({}, filters(), {start: $event}))"
+          />
+          <input
+            type="date"
+            [ngModel]="filters().end"
+            (ngModelChange)="filters.set(Object.assign({}, filters(), {end: $event}))"
+          />
+        }
+      </div>
+
+      <div class="mt-5 flex flex-wrap gap-3">
+        <button class="primary-btn" (click)="handleLoadMovements()" type="button">
+          Load movement data
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel-soft p-6">
+    <app-data-table [columns]="columns" [rows]="movements()"></app-data-table>
+  </section>
+</div>
+
+<ng-template #movementCell let-row>
+  <div>
+    <p class="font-semibold text-ink-900">
+      #{{ getValue(row, "movementId", "MovementId") }} - {{ getValue(row, "movementType", "MovementType") }}
+    </p>
+    <p class="text-xs text-ink-500">{{ getValue(row, "referenceType", "ReferenceType") }}</p>
+  </div>
+</ng-template>
+
+<ng-template #productCell let-row>
+  {{ getValue(row, "productId", "ProductId") }}
+</ng-template>
+
+<ng-template #warehouseCell let-row>
+  {{ getValue(row, "warehouseId", "WarehouseId") }}
+</ng-template>
+
+<ng-template #quantityCell let-row>
+  {{ getValue(row, "quantity", "Quantity") }}
+</ng-template>
+
+<ng-template #unitCostCell let-row>
+  {{ formatCurrency(getValue(row, "unitCost", "UnitCost")) }}
+</ng-template>
+
+<ng-template #balanceCell let-row>
+  {{ getValue(row, "balanceAfter", "BalanceAfter") || "-" }}
+</ng-template>
+
+<ng-template #dateCell let-row>
+  {{ formatDate(getValue(row, "movementDate", "MovementDate")) }}
+</ng-template>

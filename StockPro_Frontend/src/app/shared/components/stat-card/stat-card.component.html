@@ -1,0 +1,7 @@
+<div [class]="containerClasses">
+  <p class="text-xs font-semibold uppercase tracking-[0.2em] opacity-70">{{ label }}</p>
+  <h3 class="mt-3 text-3xl">{{ value }}</h3>
+  @if (helper) {
+    <p class="mt-2 text-sm opacity-80">{{ helper }}</p>
+  }
+</div>

@@ -1,0 +1,74 @@
+<div class="flex min-h-screen items-center justify-center px-4 py-10">
+  <div class="w-full max-w-xl overflow-hidden rounded-[2rem] bg-white shadow-panel">
+    <section class="px-8 py-12 sm:px-12">
+      <h2 class="text-4xl">Sign up</h2>
+      <p class="mt-2 text-sm text-ink-600">
+        Already have an account? 
+        <a class="font-semibold text-coral" routerLink="/login">
+          Login here
+        </a>
+      </p>
+
+      <form class="mt-8 grid gap-4 md:grid-cols-2" (ngSubmit)="handleSubmit()" #signupForm="ngForm">
+        <div class="md:col-span-2">
+          <label class="mb-2 block text-sm font-medium text-ink-700">Full name</label>
+          <input
+            required
+            name="fullName"
+            [(ngModel)]="form.fullName"
+          />
+        </div>
+        <div>
+          <label class="mb-2 block text-sm font-medium text-ink-700">Email</label>
+          <input
+            required
+            type="email"
+            name="email"
+            [(ngModel)]="form.email"
+          />
+        </div>
+        <div>
+          <label class="mb-2 block text-sm font-medium text-ink-700">Password</label>
+          <input
+            required
+            type="password"
+            name="password"
+            [(ngModel)]="form.password"
+          />
+        </div>
+        <div>
+          <label class="mb-2 block text-sm font-medium text-ink-700">Phone</label>
+          <input
+            name="phone"
+            [(ngModel)]="form.phone"
+          />
+        </div>
+        <div>
+          <label class="mb-2 block text-sm font-medium text-ink-700">Department</label>
+          <input
+            name="department"
+            [(ngModel)]="form.department"
+          />
+        </div>
+        <div class="md:col-span-2">
+          <label class="mb-2 block text-sm font-medium text-ink-700">Role</label>
+          <select
+            name="role"
+            [(ngModel)]="form.role"
+          >
+            @for (role of PUBLIC_SIGNUP_ROLES; track role) {
+              <option [value]="role">
+                {{ ROLE_LABELS[role] }}
+              </option>
+            }
+          </select>
+        </div>
+        <div class="md:col-span-2">
+          <button class="primary-btn w-full" [disabled]="loading() || !signupForm.valid" type="submit">
+            {{ loading() ? 'Creating account...' : 'Sign up' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>

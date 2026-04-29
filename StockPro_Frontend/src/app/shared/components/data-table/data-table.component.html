@@ -1,0 +1,40 @@
+<div class="overflow-hidden rounded-3xl border border-ink-100">
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-ink-100 text-sm">
+      <thead class="bg-ink-50">
+        <tr>
+          @for (column of columns; track column.label) {
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">
+              {{ column.label }}
+            </th>
+          }
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-ink-100 bg-white">
+        @if (rows.length) {
+          @for (row of rows; track row.id || row.key || $index) {
+            <tr class="align-top">
+              @for (column of columns; track column.label) {
+                <td class="px-4 py-4 text-ink-700">
+                  @if (column.render) {
+                    <ng-container *ngTemplateOutlet="column.render; context: { $implicit: row, index: $index }"></ng-container>
+                  } @else if (column.renderFn) {
+                    {{ column.renderFn(row) }}
+                  } @else {
+                    {{ row[column.key] }}
+                  }
+                </td>
+              }
+            </tr>
+          }
+        } @else {
+          <tr>
+            <td class="px-4 py-8 text-center text-ink-500" [colSpan]="columns.length">
+              {{ emptyMessage }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

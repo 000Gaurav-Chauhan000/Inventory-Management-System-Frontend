@@ -1,0 +1,16 @@
+<div class="flex flex-col gap-4 border-b border-ink-100 pb-6 md:flex-row md:items-center md:justify-between">
+  <div>
+    @if (eyebrow) {
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral mb-2">{{ eyebrow }}</p>
+    }
+    <h1 class="text-3xl">{{ title }}</h1>
+    @if (description) {
+      <p class="mt-2 text-sm text-ink-600">{{ description }}</p>
+    }
+  </div>
+  @if (actionsTemplate) {
+    <div class="flex flex-wrap gap-3">
+      <ng-container *ngTemplateOutlet="actionsTemplate"></ng-container>
+    </div>
+  }
+</div>

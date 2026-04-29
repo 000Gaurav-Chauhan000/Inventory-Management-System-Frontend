@@ -1,0 +1,49 @@
+<div class="space-y-8">
+  <app-page-header
+    [title]="'Hi ' + (user()?.fullName?.split(' ')?.[0] || 'there') + ', here\'s your StockPro view'"
+  ></app-page-header>
+  
+  <p class="text-ink-600 mt-[-1.5rem]">The summary cards below are wired to your microservices and adapt based on the signed-in role.</p>
+
+  <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <app-stat-card label="Products" [value]="loading() ? '...' : summary().products"></app-stat-card>
+    <app-stat-card label="Warehouses" [value]="loading() ? '...' : summary().warehouses" tone="mint"></app-stat-card>
+    <app-stat-card label="Low Stock" [value]="loading() ? '...' : summary().lowStock"></app-stat-card>
+    @if (canViewInventoryValue) {
+      <app-stat-card
+        label="Total Inventory Value"
+        [value]="loading() ? '...' : formatCurrency(summary().totalValue)"
+        tone="mint"
+      ></app-stat-card>
+    }
+  </div>
+
+  <div class="grid gap-4 md:grid-cols-3">
+    @if (user()?.role === 'ADMIN') {
+      <app-stat-card label="Users" [value]="loading() ? '...' : summary().users" tone="coral"></app-stat-card>
+    }
+    @if (user()?.role === 'OFFICER') {
+      <app-stat-card label="Suppliers" [value]="loading() ? '...' : summary().suppliers" tone="coral"></app-stat-card>
+    }
+    @if (['ADMIN', 'MANAGER', 'OFFICER'].includes(user()?.role || '')) {
+      <app-stat-card label="Approved POs" [value]="loading() ? '...' : summary().approvedPos" tone="coral"></app-stat-card>
+    }
+  </div>
+
+  <section>
+    <div class="panel-soft p-6">
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-coral">Quick Access</p>
+      <div class="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+        @for (item of quickLinks; track item.to) {
+          <a
+            class="rounded-3xl border border-ink-100 bg-white px-5 py-5 transition hover:-translate-y-0.5 hover:border-coral/30"
+            [routerLink]="item.to"
+          >
+            <h3 class="text-xl">{{ item.label }}</h3>
+            <p class="mt-2 text-sm text-ink-600">Open the {{ item.label.toLowerCase() }} workspace.</p>
+          </a>
+        }
+      </div>
+    </div>
+  </section>
+</div>
