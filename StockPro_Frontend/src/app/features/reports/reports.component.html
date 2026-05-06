@@ -12,7 +12,7 @@
     <div class="mt-5 flex flex-wrap gap-3">
       @for (action of availableReports; track action.value) {
         <button
-          [class]="selectedReport?.value === action.value ? 'primary-btn' : 'secondary-btn'"
+          [class]="selectedReport.value === action.value ? 'primary-btn' : 'secondary-btn'"
           (click)="activeReport.set(action.value)"
           type="button"
         >
@@ -22,7 +22,7 @@
     </div>
 
     <div class="mt-5 grid gap-4 md:grid-cols-2">
-      @if (selectedReport?.requires?.includes("warehouseId")) {
+      @if (selectedReport.requires?.includes("warehouseId")) {
         <input
           placeholder="Warehouse ID"
           type="number"
@@ -31,7 +31,7 @@
         />
       }
 
-      @if (selectedReport?.requires?.includes("dateRange")) {
+      @if (selectedReport.requires?.includes("dateRange")) {
         <input
           type="date"
           [ngModel]="filters().start"
