@@ -12,7 +12,7 @@ export const ROLE_LABELS: Record<string, string> = {
 
 // Using a simple object for environments for now.
 export const environment = {
-  gatewayApi: 'http://localhost:5000'
+  gatewayApi: 'https://stockpro-gateway.onrender.com'
 };
 
 export const URLS = {

@@ -3,8 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { StorageService } from './storage.service';
 import { API_ROUTES, PUBLIC_SIGNUP_ROLES } from '../constants/app.constants';
 import { extractApiMessage } from '../utils/utils';
-import { catchError, map, tap } from 'rxjs/operators';
-import { firstValueFrom, throwError } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
 function sanitizePublicRole(role: string): string {
   return PUBLIC_SIGNUP_ROLES.includes(role) ? role : 'STAFF';
@@ -22,18 +21,19 @@ export class AuthService {
   booting = signal<boolean>(true);
 
   get isAuthenticated(): boolean {
-    return Boolean(this.token());
+    return !!this.token();
   }
 
   async bootstrap(): Promise<void> {
-    const currentToken = this.token();
-    if (!currentToken) {
+    const token = this.token();
+
+    if (!token) {
       this.booting.set(false);
       return;
     }
 
     try {
-      await this.fetchProfile(currentToken);
+      await this.fetchProfile();
     } catch {
       this.clearSession();
     } finally {
@@ -41,11 +41,12 @@ export class AuthService {
     }
   }
 
-  async fetchProfile(activeToken: string = this.token()): Promise<any> {
+  async fetchProfile(): Promise<any> {
     try {
       const profile = await firstValueFrom(
         this.http.get(API_ROUTES.auth.profile)
       );
+
       this.user.set(profile);
       return profile;
     } catch (error) {
@@ -64,13 +65,13 @@ export class AuthService {
       const response: any = await firstValueFrom(
         this.http.post(API_ROUTES.auth.login, credentials)
       );
+
       const nextToken = response.token || response.Token;
 
       this.storageService.setStoredToken(nextToken);
       this.token.set(nextToken);
-      // clearPersistentStore equivalent - we might need to clear local storage items related to persistent state if there are any, but keeping it simple.
 
-      return await this.fetchProfile(nextToken);
+      return await this.fetchProfile();
     } catch (error) {
       throw new Error(extractApiMessage(error));
     }
@@ -82,6 +83,7 @@ export class AuthService {
         ...payload,
         role: sanitizePublicRole(payload.role),
       };
+
       return await firstValueFrom(
         this.http.post(API_ROUTES.auth.register, request)
       );
@@ -105,6 +107,7 @@ export class AuthService {
       await firstValueFrom(
         this.http.put(API_ROUTES.auth.profile, payload)
       );
+
       return await this.fetchProfile();
     } catch (error) {
       throw new Error(extractApiMessage(error));
@@ -124,21 +127,21 @@ export class AuthService {
   async refreshSession(): Promise<any> {
     try {
       const currentToken = this.token();
+
       if (!currentToken) {
         throw new Error('No active session to refresh.');
       }
 
       const response: any = await firstValueFrom(
-        this.http.post(API_ROUTES.auth.refresh, JSON.stringify(currentToken), {
-          headers: { 'Content-Type': 'application/json' }
-        })
+        this.http.post(API_ROUTES.auth.refresh, null)
       );
+
       const nextToken = response.token || response.Token;
 
       this.storageService.setStoredToken(nextToken);
       this.token.set(nextToken);
 
-      return await this.fetchProfile(nextToken);
+      return await this.fetchProfile();
     } catch (error) {
       throw new Error(extractApiMessage(error));
     }
@@ -146,14 +149,11 @@ export class AuthService {
 
   async logout(): Promise<void> {
     try {
-      const currentToken = this.token();
-      if (currentToken) {
-        await firstValueFrom(
-          this.http.post(API_ROUTES.auth.logout, JSON.stringify(currentToken), {
-            headers: { 'Content-Type': 'application/json' }
-          }).pipe(catchError(() => [])) // ignore errors on logout
-        );
-      }
+      await firstValueFrom(
+        this.http.post(API_ROUTES.auth.logout, null)
+      );
+    } catch {
+      // ignore logout errors
     } finally {
       this.clearSession();
     }
